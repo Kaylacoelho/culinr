@@ -1,5 +1,7 @@
 import type { Recipe } from '../types/recipe'
 
+const BASE = import.meta.env.VITE_API_URL ?? ''
+
 export interface SearchResult {
   title: string
   url: string
@@ -7,7 +9,7 @@ export interface SearchResult {
 }
 
 export async function searchRecipes(query: string): Promise<SearchResult[]> {
-  const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
+  const response = await fetch(`${BASE}/api/search?q=${encodeURIComponent(query)}`)
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Search failed' }))
     throw new Error(error.message ?? 'Search failed')
@@ -16,7 +18,7 @@ export async function searchRecipes(query: string): Promise<SearchResult[]> {
 }
 
 export async function parseRecipeUrl(url: string): Promise<Recipe> {
-  const response = await fetch('/api/recipes/parse', {
+  const response = await fetch('${BASE}/api/recipes/parse', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),
@@ -32,7 +34,7 @@ export async function parseRecipeUrl(url: string): Promise<Recipe> {
 
 export async function getSubstitution(allergen: string): Promise<string | undefined> {
   try {
-    const response = await fetch('/api/allergen-sub', {
+    const response = await fetch('${BASE}/api/allergen-sub', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ allergen }),
