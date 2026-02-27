@@ -1,5 +1,20 @@
 import type { Recipe } from '../types/recipe'
 
+export interface SearchResult {
+  title: string
+  url: string
+  description: string
+}
+
+export async function searchRecipes(query: string): Promise<SearchResult[]> {
+  const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Search failed' }))
+    throw new Error(error.message ?? 'Search failed')
+  }
+  return response.json()
+}
+
 export async function parseRecipeUrl(url: string): Promise<Recipe> {
   const response = await fetch('/api/recipes/parse', {
     method: 'POST',
@@ -13,4 +28,19 @@ export async function parseRecipeUrl(url: string): Promise<Recipe> {
   }
 
   return response.json()
+}
+
+export async function getSubstitution(allergen: string): Promise<string | undefined> {
+  try {
+    const response = await fetch('/api/allergen-sub', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ allergen }),
+    })
+    if (!response.ok) return undefined
+    const data = await response.json() as { substitution: string | null }
+    return data.substitution ?? undefined
+  } catch {
+    return undefined
+  }
 }

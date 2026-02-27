@@ -1,7 +1,9 @@
-import type { Restriction } from '../types/dietary'
+import type { Restriction, AllergyEntry } from '../types/dietary'
 
 interface SubstitutionEntry {
   keywords: string[]
+  /** If the ingredient text contains any of these words, skip this entry */
+  excludeIf?: string[]
   violations: Restriction[]
   sub: Partial<Record<Restriction, string>>
 }
@@ -10,6 +12,7 @@ export interface IngredientAnalysis {
   text: string
   flagged: boolean
   violations: Restriction[]
+  allergens: AllergyEntry[]
   substitution?: string
 }
 
@@ -17,6 +20,7 @@ const TABLE: SubstitutionEntry[] = [
   // ── Dairy ──────────────────────────────────────────────────────────────────
   {
     keywords: ['butter', 'ghee'],
+    excludeIf: ['almond', 'peanut', 'cashew', 'hazelnut', 'nut', 'sunflower', 'seed', 'cocoa', 'coconut', 'apple', 'vegan'],
     violations: ['vegan', 'dairy-free'],
     sub: {
       vegan: 'vegan butter or coconut oil',
@@ -25,6 +29,7 @@ const TABLE: SubstitutionEntry[] = [
   },
   {
     keywords: ['milk', 'whole milk', 'skim milk', 'buttermilk', 'half-and-half', 'half and half'],
+    excludeIf: ['coconut', 'almond', 'oat', 'soy', 'rice', 'hemp', 'cashew', 'plant', 'non-dairy'],
     violations: ['vegan', 'dairy-free'],
     sub: {
       vegan: 'oat milk or soy milk (same amount)',
@@ -33,6 +38,7 @@ const TABLE: SubstitutionEntry[] = [
   },
   {
     keywords: ['heavy cream', 'whipping cream', 'double cream', 'cream'],
+    excludeIf: ['coconut', 'non-dairy', 'dairy-free', 'vegan'],
     violations: ['vegan', 'dairy-free'],
     sub: {
       vegan: 'full-fat coconut cream',
@@ -41,6 +47,7 @@ const TABLE: SubstitutionEntry[] = [
   },
   {
     keywords: ['cheese', 'parmesan', 'cheddar', 'mozzarella', 'ricotta', 'feta', 'brie', 'gouda', 'gruyere'],
+    excludeIf: ['vegan', 'dairy-free', 'non-dairy'],
     violations: ['vegan', 'dairy-free'],
     sub: {
       vegan: 'vegan cheese (cashew-based or store-bought)',
@@ -57,6 +64,7 @@ const TABLE: SubstitutionEntry[] = [
   },
   {
     keywords: ['yogurt'],
+    excludeIf: ['coconut', 'soy', 'almond', 'dairy-free', 'non-dairy', 'vegan', 'plant'],
     violations: ['vegan', 'dairy-free'],
     sub: {
       vegan: 'plain coconut or soy yogurt',
@@ -73,6 +81,7 @@ const TABLE: SubstitutionEntry[] = [
   },
   {
     keywords: ['ice cream'],
+    excludeIf: ['coconut', 'dairy-free', 'vegan', 'non-dairy'],
     violations: ['vegan', 'dairy-free'],
     sub: {
       vegan: 'coconut milk ice cream',
@@ -102,6 +111,7 @@ const TABLE: SubstitutionEntry[] = [
   // ── Gluten ─────────────────────────────────────────────────────────────────
   {
     keywords: ['flour', 'all-purpose flour', 'bread flour', 'wheat flour', 'plain flour', 'cake flour', 'self-rising flour', 'pastry flour'],
+    excludeIf: ['rice', 'sorghum', 'millet', 'tapioca', 'cassava', 'arrowroot', 'chickpea', 'teff', 'buckwheat', 'oat', 'corn', 'potato', 'quinoa', 'amaranth', 'coconut', 'almond', 'hazelnut', 'chestnut', 'glutinous', 'gluten-free'],
     violations: ['gluten-free'],
     sub: {
       'gluten-free': 'gluten-free all-purpose flour blend (1:1 ratio)',
@@ -349,45 +359,57 @@ const TABLE: SubstitutionEntry[] = [
 
 // ─── Analysis functions ───────────────────────────────────────────────────────
 
-export function analyzeIngredients(
-  ingredients: string[],
-  restrictions: Restriction[]
-): IngredientAnalysis[] {
-  if (restrictions.length === 0) {
-    return ingredients.map(text => ({ text, flagged: false, violations: [] }))
-  }
+function entryMatchesIngredient(entry: SubstitutionEntry, lower: string): boolean {
+  const matched = entry.keywords.some(kw => {
+    const escaped = kw.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
+    return new RegExp(String.raw`\b${escaped}\b`).test(lower)
+  })
+  return matched && !entry.excludeIf?.some(ex => lower.includes(ex))
+}
 
-  return ingredients.map(text => {
-    const lower = text.toLowerCase()
-    const violations: Restriction[] = []
-    let substitution: string | undefined
+function getViolations(lower: string, restrictions: Restriction[]): { violations: Restriction[]; substitution?: string } {
+  const violations: Restriction[] = []
+  let substitution: string | undefined
 
-    for (const entry of TABLE) {
-      const matches = entry.keywords.some(kw => {
-        // Word-boundary match: ensure keyword is a whole word (or phrase)
-        const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        return new RegExp(`\\b${escaped}\\b`).test(lower)
-      })
-      if (!matches) continue
-
-      for (const r of restrictions) {
-        if (entry.violations.includes(r) && !violations.includes(r)) {
-          violations.push(r)
-          if (!substitution && entry.sub[r]) {
-            substitution = entry.sub[r]
-          }
-        }
+  for (const entry of TABLE) {
+    if (!entryMatchesIngredient(entry, lower)) continue
+    for (const r of restrictions) {
+      if (entry.violations.includes(r) && !violations.includes(r)) {
+        violations.push(r)
+        if (!substitution && entry.sub[r]) substitution = entry.sub[r]
       }
     }
+  }
 
-    return { text, flagged: violations.length > 0, violations, substitution }
+  return { violations, substitution }
+}
+
+export function analyzeIngredients(
+  ingredients: string[],
+  restrictions: Restriction[],
+  allergies: AllergyEntry[] = []
+): IngredientAnalysis[] {
+  return ingredients.map(text => {
+    const lower = text.toLowerCase()
+    const { violations, substitution } = getViolations(lower, restrictions)
+
+    const allergens = allergies.filter(a => lower.includes(a.name.toLowerCase()))
+
+    return {
+      text,
+      flagged: violations.length > 0 || allergens.length > 0,
+      violations,
+      allergens,
+      substitution,
+    }
   })
 }
 
 export function isRecipeCompatible(
   ingredients: string[],
-  restrictions: Restriction[]
+  restrictions: Restriction[],
+  allergies: AllergyEntry[] = []
 ): boolean {
-  if (restrictions.length === 0) return true
-  return analyzeIngredients(ingredients, restrictions).every(a => !a.flagged)
+  if (restrictions.length === 0 && allergies.length === 0) return true
+  return analyzeIngredients(ingredients, restrictions, allergies).every(a => !a.flagged)
 }

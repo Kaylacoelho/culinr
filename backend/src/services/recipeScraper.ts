@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio'
 import crypto from 'crypto'
 import type { CheerioAPI } from 'cheerio'
 import type { Recipe } from '../types/recipe'
+import { fetchWithPuppeteer } from './puppeteerScraper'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -258,16 +259,40 @@ function extractFromHeuristics($: CheerioAPI): Extracted | null {
 
 // ─── Main export ─────────────────────────────────────────────────────────────
 
+const AXIOS_CONFIG = {
+  timeout: 15_000,
+  headers: {
+    'User-Agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+    Connection: 'keep-alive',
+  },
+  maxRedirects: 5,
+  decompress: true,
+} as const
+
 export async function scrapeRecipe(url: string): Promise<Recipe> {
-  const { data: html } = await axios.get(url, {
-    timeout: 10_000,
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml',
-    },
-    maxRedirects: 5,
-  })
+  let html: string
+  try {
+    const res = await axios.get(url, AXIOS_CONFIG)
+    html = res.data as string
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 403) {
+      console.log(`[scraper] axios blocked (403), retrying with Puppeteer: ${url}`)
+      html = await fetchWithPuppeteer(url)
+    } else {
+      throw err
+    }
+  }
 
   const $ = cheerio.load(html)
 

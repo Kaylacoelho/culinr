@@ -7,13 +7,13 @@ import RecipeCard from '../components/RecipeCard'
 
 export default function SavedRecipes() {
   const { recipes, deleteRecipe } = useRecipes()
-  const { restrictions } = useRestrictions()
+  const { restrictions, allergies } = useRestrictions()
   const [query, setQuery] = useState('')
   const [compatibleOnly, setCompatibleOnly] = useState(false)
 
   const filtered = recipes.filter(r => {
     if (!r.title.toLowerCase().includes(query.toLowerCase())) return false
-    if (compatibleOnly && !isRecipeCompatible(r.ingredients, restrictions)) return false
+    if (compatibleOnly && !isRecipeCompatible(r.ingredients, restrictions, allergies)) return false
     return true
   })
 

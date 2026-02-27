@@ -17,7 +17,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 export default function MealPrep() {
   const { recipes } = useRecipes()
-  const { restrictions } = useRestrictions()
+  const { restrictions, allergies } = useRestrictions()
   const { addToList, isInList } = useShoppingList()
   const [mealCount, setMealCount] = useState(5)
   const [plan, setPlan] = useState<Recipe[]>([])
@@ -25,8 +25,8 @@ export default function MealPrep() {
   const [addedAll, setAddedAll] = useState(false)
 
   const compatible = useMemo(
-    () => recipes.filter(r => isRecipeCompatible(r.ingredients, restrictions)),
-    [recipes, restrictions]
+    () => recipes.filter(r => isRecipeCompatible(r.ingredients, restrictions, allergies)),
+    [recipes, restrictions, allergies]
   )
 
   function generate() {

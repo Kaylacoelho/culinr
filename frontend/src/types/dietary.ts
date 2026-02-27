@@ -1,3 +1,8 @@
+export interface AllergyEntry {
+  name: string
+  substitution?: string
+}
+
 export type Restriction =
   | 'vegan'
   | 'vegetarian'

@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react'
 export interface ShoppingListEntry {
   recipeId: string
   recipeTitle: string
+  ingredients: string[]
 }
 
 const STORAGE_KEY = 'culinr_shopping_list'

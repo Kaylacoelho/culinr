@@ -16,12 +16,13 @@ export default function ShoppingList() {
     })
   }
 
-  const sections = list
-    .map(entry => {
-      const recipe = recipes.find(r => r.id === entry.recipeId)
-      return recipe ? { ...entry, ingredients: recipe.ingredients } : null
-    })
-    .filter(Boolean) as (typeof list[0] & { ingredients: string[] })[]
+  const sections = list.map(entry => ({
+    ...entry,
+    // Use stored selected ingredients; fall back to full recipe for old data without stored ingredients
+    ingredients: entry.ingredients?.length
+      ? entry.ingredients
+      : (recipes.find(r => r.id === entry.recipeId)?.ingredients ?? []),
+  }))
 
   if (list.length === 0) {
     return (

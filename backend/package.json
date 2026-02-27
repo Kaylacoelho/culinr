@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev": "ts-node-dev --require dotenv/config --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.ts"
   },
@@ -12,10 +12,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@anthropic-ai/sdk": "0.78.0",
     "axios": "1.13.5",
     "cheerio": "1.2.0",
     "cors": "2.8.6",
-    "express": "5.2.1"
+    "dotenv": "17.3.1",
+    "express": "5.2.1",
+    "groq-sdk": "0.37.0",
+    "puppeteer": "24.37.5"
   },
   "devDependencies": {
     "@types/cors": "2.8.19",
