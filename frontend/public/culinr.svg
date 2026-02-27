@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background -->
+  <rect width="32" height="32" rx="8" fill="#059669"/>
+
+  <!-- Bold C arc — opens to the right -->
+  <path
+    d="M 25 9.5 A 11.5 11.5 0 1 0 25 22.5"
+    stroke="white"
+    stroke-width="4"
+    stroke-linecap="round"
+    fill="none"
+  />
+
+  <!-- Herb leaf sprouting from the top arm of the C -->
+  <path
+    d="M 25 9.5 C 28 7 30 4.5 28 3 C 25.5 4 23.5 7.5 25 9.5 Z"
+    fill="white"
+  />
+</svg>

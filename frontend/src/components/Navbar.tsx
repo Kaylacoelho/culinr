@@ -16,7 +16,12 @@ export default function Navbar() {
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link to="/" className="text-xl font-bold text-emerald-600 tracking-tight">
+        <Link to="/" className="flex items-center gap-2 text-xl font-bold text-emerald-600 tracking-tight">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="32" height="32" rx="8" fill="#059669"/>
+            <path d="M 25 9.5 A 11.5 11.5 0 1 0 25 22.5" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+            <path d="M 25 9.5 C 28 7 30 4.5 28 3 C 25.5 4 23.5 7.5 25 9.5 Z" fill="white"/>
+          </svg>
           Culinr
         </Link>
         <div className="flex items-center gap-1">
