@@ -45,7 +45,7 @@ export default function MealPrep() {
   }
 
   function addAllToShoppingList() {
-    plan.forEach(r => addToList({ recipeId: r.id, recipeTitle: r.title }))
+    plan.forEach(r => addToList({ recipeId: r.id, recipeTitle: r.title, ingredients: r.ingredients }))
     setAddedAll(true)
   }
 

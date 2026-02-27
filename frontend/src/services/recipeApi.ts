@@ -18,7 +18,7 @@ export async function searchRecipes(query: string): Promise<SearchResult[]> {
 }
 
 export async function parseRecipeUrl(url: string): Promise<Recipe> {
-  const response = await fetch('${BASE}/api/recipes/parse', {
+  const response = await fetch(`${BASE}/api/recipes/parse`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),
@@ -34,7 +34,7 @@ export async function parseRecipeUrl(url: string): Promise<Recipe> {
 
 export async function getSubstitution(allergen: string): Promise<string | undefined> {
   try {
-    const response = await fetch('${BASE}/api/allergen-sub', {
+    const response = await fetch(`${BASE}/api/allergen-sub`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ allergen }),
