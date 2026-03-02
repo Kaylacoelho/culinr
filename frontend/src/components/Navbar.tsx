@@ -18,14 +18,12 @@ export default function Navbar() {
       <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-xl font-bold text-emerald-600 tracking-tight">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect width="32" height="32" rx="8" fill="#059669"/>
-            <circle cx="16" cy="5" r="2" stroke="white" strokeWidth="1.5"/>
-            <line x1="16" y1="7" x2="16" y2="18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-            <line x1="13" y1="18" x2="19" y2="18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-            <path d="M16 18 C9 19 9 27 16 29"  stroke="white" strokeWidth="1" strokeLinecap="round"/>
-            <path d="M16 18 C12 20 12 27 16 29" stroke="white" strokeWidth="1" strokeLinecap="round"/>
-            <path d="M16 18 C20 20 20 27 16 29" stroke="white" strokeWidth="1" strokeLinecap="round"/>
-            <path d="M16 18 C23 19 23 27 16 29"  stroke="white" strokeWidth="1" strokeLinecap="round"/>
+            <line x1="16" y1="4" x2="16" y2="17" stroke="#059669" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="13.5" y1="17" x2="18.5" y2="17" stroke="#059669" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M16 17 C11 18 11 26 16 28" stroke="#059669" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M16 17 C21 18 21 26 16 28" stroke="#059669" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M16 17 C13.5 19 13.5 26 16 28" stroke="#059669" strokeWidth="1" strokeLinecap="round"/>
+            <path d="M16 17 C18.5 19 18.5 26 16 28" stroke="#059669" strokeWidth="1" strokeLinecap="round"/>
           </svg>
           Culinr
         </Link>
