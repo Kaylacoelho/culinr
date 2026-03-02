@@ -49,12 +49,12 @@ router.get('/', async (req, res) => {
     return
   }
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-  })
-
+  let browser
   try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    })
     const page = await browser.newPage()
     await page.setUserAgent(USER_AGENT)
     await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' })
@@ -109,7 +109,7 @@ router.get('/', async (req, res) => {
   } catch {
     res.status(502).json({ message: 'Search failed. Try again.' })
   } finally {
-    await browser.close()
+    await browser?.close()
   }
 })
 
