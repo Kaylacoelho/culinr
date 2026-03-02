@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import puppeteer from 'puppeteer'
 import axios from 'axios'
+import * as cheerio from 'cheerio'
 
 const router = Router()
 
@@ -23,11 +23,18 @@ function isLikelyListicle(title: string): boolean {
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
+/** DDG HTML wraps links as /l/?uddg=ENCODED_URL — extract the real destination. */
+function extractDdgUrl(href: string): string {
+  const match = href.match(/uddg=([^&]+)/)
+  if (match) return decodeURIComponent(match[1])
+  if (href.startsWith('http')) return href
+  return ''
+}
+
 /**
  * Quick pre-check: does this URL have Schema.org Recipe JSON-LD?
  * Returns false only when we're certain the page has no recipe schema.
- * Returns null (pass-through) when the site blocks axios or times out —
- * Puppeteer may still succeed on import.
+ * Returns null (pass-through) when the site blocks axios or times out.
  */
 async function hasRecipeSchema(url: string): Promise<boolean | null> {
   try {
@@ -49,52 +56,34 @@ router.get('/', async (req, res) => {
     return
   }
 
-  let browser
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    })
-    const page = await browser.newPage()
-    await page.setUserAgent(USER_AGENT)
-    await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' })
-
-    // Block images/fonts/media to speed up loading
-    await page.setRequestInterception(true)
-    page.on('request', intercepted => {
-      if (['image', 'stylesheet', 'font', 'media'].includes(intercepted.resourceType())) {
-        intercepted.abort()
-      } else {
-        intercepted.continue()
-      }
-    })
-
     const query = encodeURIComponent(`${q} recipe`)
-    await page.goto(`https://duckduckgo.com/?q=${query}`, {
-      waitUntil: 'networkidle2',
-      timeout: 20_000,
-    })
+    const response = await axios.get<string>(
+      `https://html.duckduckgo.com/html/?q=${query}`,
+      {
+        timeout: 10_000,
+        headers: {
+          'User-Agent': USER_AGENT,
+          Accept: 'text/html,application/xhtml+xml,*/*',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate',
+        },
+      }
+    )
 
-    // Wait for at least one result to appear
-    await page.waitForSelector('[data-testid="result"]', { timeout: 10_000 })
+    const $ = cheerio.load(response.data)
 
-    const raw: SearchResult[] = await page.evaluate(() => {
-      const items = Array.from(document.querySelectorAll('[data-testid="result"]'))
-      return items
-        .slice(0, 15)
-        .map(item => {
-          const titleEl =
-            item.querySelector<HTMLAnchorElement>('[data-testid="result-title-a"]') ??
-            item.querySelector<HTMLAnchorElement>('h2 a')
-          const descEl =
-            item.querySelector('[data-testid="result-snippet"]') ??
-            item.querySelector('.result__snippet')
-          const title = titleEl?.textContent?.trim() ?? ''
-          const url = titleEl?.href ?? ''
-          const description = descEl?.textContent?.trim() ?? ''
-          return { title, url, description }
-        })
-        .filter(r => r.title && r.url && !r.url.includes('duckduckgo.com'))
+    const raw: SearchResult[] = []
+    $('.result').each((_, el) => {
+      const titleEl = $(el).find('a.result__a').first()
+      const descEl = $(el).find('.result__snippet').first()
+      const title = titleEl.text().trim()
+      const href = titleEl.attr('href') ?? ''
+      const url = extractDdgUrl(href)
+      const description = descEl.text().trim()
+      if (title && url && !url.includes('duckduckgo.com')) {
+        raw.push({ title, url, description })
+      }
     })
 
     const candidates = raw.filter(r => !isLikelyListicle(r.title)).slice(0, 12)
@@ -108,8 +97,6 @@ router.get('/', async (req, res) => {
     res.json(results.length > 0 ? results : candidates.slice(0, 8))
   } catch {
     res.status(502).json({ message: 'Search failed. Try again.' })
-  } finally {
-    await browser?.close()
   }
 })
 
