@@ -18,7 +18,7 @@ function shuffle<T>(arr: T[]): T[] {
 export default function MealPrep() {
   const { recipes } = useRecipes()
   const { restrictions, allergies } = useRestrictions()
-  const { addToList, isInList } = useShoppingList()
+  const { addToList } = useShoppingList()
   const [mealCount, setMealCount] = useState(5)
   const [plan, setPlan] = useState<Recipe[]>([])
   const [generated, setGenerated] = useState(false)
