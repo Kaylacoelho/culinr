@@ -19,8 +19,13 @@ export default function Navbar() {
         <Link to="/" className="flex items-center gap-2 text-xl font-bold text-emerald-600 tracking-tight">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <rect width="32" height="32" rx="8" fill="#059669"/>
-            <path d="M 25 9.5 A 11.5 11.5 0 1 0 25 22.5" stroke="white" strokeWidth="4" strokeLinecap="round"/>
-            <path d="M 25 9.5 C 28 7 30 4.5 28 3 C 25.5 4 23.5 7.5 25 9.5 Z" fill="white"/>
+            <circle cx="16" cy="5" r="2" stroke="white" strokeWidth="1.5"/>
+            <line x1="16" y1="7" x2="16" y2="18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+            <line x1="13" y1="18" x2="19" y2="18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M16 18 C9 19 9 27 16 29"  stroke="white" strokeWidth="1" strokeLinecap="round"/>
+            <path d="M16 18 C12 20 12 27 16 29" stroke="white" strokeWidth="1" strokeLinecap="round"/>
+            <path d="M16 18 C20 20 20 27 16 29" stroke="white" strokeWidth="1" strokeLinecap="round"/>
+            <path d="M16 18 C23 19 23 27 16 29"  stroke="white" strokeWidth="1" strokeLinecap="round"/>
           </svg>
           Culinr
         </Link>
