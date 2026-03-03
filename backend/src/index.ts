@@ -24,10 +24,16 @@ function isAllowedOrigin(origin: string | undefined): boolean {
       if (!allowedHost.endsWith('.vercel.app') || !originHost.endsWith('.vercel.app')) return false
       const aParts = allowedHost.replace('.vercel.app', '').split('-')
       const oParts = originHost.replace('.vercel.app', '').split('-')
-      // Preview URLs have exactly one extra segment (the hash) inserted at position 1
-      if (oParts.length !== aParts.length + 1) return false
-      const withoutHash = [oParts[0], ...oParts.slice(2)]
-      return withoutHash.join('-') === aParts.join('-')
+      // Case 1: same project-team slug, one extra hash segment
+      // culinr-kaylacoelhos-projects.vercel.app → culinr-HASH-kaylacoelhos-projects.vercel.app
+      if (oParts.length === aParts.length + 1) {
+        const withoutHash = [oParts[0], ...oParts.slice(2)]
+        if (withoutHash.join('-') === aParts.join('-')) return true
+      }
+      // Case 2: production is a short domain (e.g. culinr.vercel.app), preview has team slug
+      // culinr.vercel.app → culinr-HASH-team.vercel.app
+      if (aParts.length === 1 && oParts[0] === aParts[0] && oParts.length > 1) return true
+      return false
     } catch {
       return false
     }
