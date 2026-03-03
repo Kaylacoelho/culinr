@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { parseRecipeUrl, searchRecipes } from "../services/recipeApi";
 import { useRestrictions } from "../hooks/useRestrictions";
+import { useRecipes } from "../hooks/useRecipes";
 import { RESTRICTIONS } from "../types/dietary";
 import type { Recipe } from "../types/recipe";
 import type { SearchResult } from "../services/recipeApi";
@@ -22,6 +23,9 @@ export default function Home() {
   const [importing, setImporting] = useState<string | null>(null);
   const [importErrors, setImportErrors] = useState<Record<string, string>>({});
   const [filterByDiet, setFilterByDiet] = useState(false);
+
+  const { recipes } = useRecipes()
+  const savedUrls = new Set(recipes.map((r) => r.url))
 
   const { restrictions, allergies } = useRestrictions();
   const activeRestrictionLabels = RESTRICTIONS.filter((r) =>
@@ -274,40 +278,62 @@ export default function Home() {
 
           {results.length > 0 && (
             <div className="space-y-3">
-              {results.map((result) => (
-                <div
-                  key={result.url}
-                  className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-shadow"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm leading-snug mb-0.5">
-                        {result.title}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate mb-2">
-                        {result.url}
-                      </p>
-                      {result.description && (
-                        <p className="text-xs text-gray-500 line-clamp-2">
-                          {result.description}
+              {results.map((result) => {
+                const alreadySaved = savedUrls.has(result.url)
+                const savedRecipe = alreadySaved
+                  ? recipes.find((r) => r.url === result.url)
+                  : undefined
+                return (
+                  <div
+                    key={result.url}
+                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-shadow"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="font-medium text-gray-900 text-sm leading-snug">
+                            {result.title}
+                          </p>
+                          {alreadySaved && (
+                            <span className="shrink-0 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+                              Saved
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400 truncate mb-2">
+                          {result.url}
                         </p>
-                      )}
-                      {importErrors[result.url] && (
-                        <p className="text-xs text-red-600 mt-1">
-                          {importErrors[result.url]}
-                        </p>
+                        {result.description && (
+                          <p className="text-xs text-gray-500 line-clamp-2">
+                            {result.description}
+                          </p>
+                        )}
+                        {importErrors[result.url] && (
+                          <p className="text-xs text-red-600 mt-1">
+                            {importErrors[result.url]}
+                          </p>
+                        )}
+                      </div>
+                      {alreadySaved ? (
+                        <button
+                          onClick={() => navigate(`/recipe/${savedRecipe!.id}`)}
+                          className="shrink-0 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold transition-colors"
+                        >
+                          View →
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleImport(result)}
+                          disabled={importing === result.url}
+                          className="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-60"
+                        >
+                          {importing === result.url ? "…" : "Import →"}
+                        </button>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleImport(result)}
-                      disabled={importing === result.url}
-                      className="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-60"
-                    >
-                      {importing === result.url ? "…" : "Import →"}
-                    </button>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </>
