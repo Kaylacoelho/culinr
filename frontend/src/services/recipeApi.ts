@@ -32,6 +32,23 @@ export async function parseRecipeUrl(url: string): Promise<Recipe> {
   return response.json()
 }
 
+export async function scanRecipeImage(file: File): Promise<Recipe> {
+  const formData = new FormData()
+  formData.append('image', file)
+
+  const response = await fetch(`${BASE}/api/recipes/scan`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to scan image' }))
+    throw new Error(error.message ?? 'Failed to scan image')
+  }
+
+  return response.json()
+}
+
 export async function getSubstitution(allergen: string): Promise<string | undefined> {
   try {
     const response = await fetch(`${BASE}/api/allergen-sub`, {

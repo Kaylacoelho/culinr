@@ -3,6 +3,7 @@ import cors from "cors";
 import recipeRoutes from "./routes/recipes";
 import searchRoutes from "./routes/search";
 import allergenSubRoutes from "./routes/allergenSub";
+import scanRoutes from "./routes/scan";
 
 const app = express();
 const PORT = process.env.PORT ?? 5001;
@@ -46,6 +47,7 @@ app.use(express.json());
 app.use("/api/recipes", recipeRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/allergen-sub", allergenSubRoutes);
+app.use("/api/recipes/scan", scanRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

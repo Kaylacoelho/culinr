@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { parseRecipeUrl, searchRecipes } from "../services/recipeApi";
+import { parseRecipeUrl, searchRecipes, scanRecipeImage } from "../services/recipeApi";
 import { useRestrictions } from "../hooks/useRestrictions";
 import { useRecipes } from "../hooks/useRecipes";
 import { RESTRICTIONS } from "../types/dietary";
@@ -8,12 +8,18 @@ import type { Recipe } from "../types/recipe";
 import type { SearchResult } from "../services/recipeApi";
 
 export default function Home() {
-  const [mode, setMode] = useState<"url" | "search">("url");
+  const [mode, setMode] = useState<"url" | "search" | "scan">("url");
 
   // URL paste mode
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [urlError, setUrlError] = useState("");
+
+  // Scan mode
+  const [scanFile, setScanFile] = useState<File | null>(null);
+  const [scanPreview, setScanPreview] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState("");
 
   // Search mode
   const [query, setQuery] = useState("");
@@ -54,6 +60,28 @@ export default function Home() {
       // ignore malformed data
     }
   }, []);
+
+  function handleScanFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setScanFile(file);
+    setScanPreview(file ? URL.createObjectURL(file) : null);
+    setScanError("");
+  }
+
+  async function handleScanSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!scanFile) return;
+    setScanning(true);
+    setScanError("");
+    try {
+      const recipe = await scanRecipeImage(scanFile);
+      navigate(`/recipe/${recipe.id}`, { state: { recipe } });
+    } catch (err) {
+      setScanError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setScanning(false);
+    }
+  }
 
   async function handlePasteSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -131,7 +159,7 @@ export default function Home() {
 
       {/* Tab toggle */}
       <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-        {(["url", "search"] as const).map((m) => (
+        {(["url", "search", "scan"] as const).map((m) => (
           <button
             key={m}
             onClick={() => setMode(m)}
@@ -141,7 +169,7 @@ export default function Home() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            {m === "url" ? "🔗 Paste URL" : "🔍 Search online"}
+            {m === "url" ? "🔗 Paste URL" : m === "search" ? "🔍 Search online" : "📷 Scan cookbook"}
           </button>
         ))}
       </div>
@@ -185,6 +213,69 @@ export default function Home() {
             ))}
           </div>
         </>
+      )}
+
+      {/* Scan tab */}
+      {mode === "scan" && (
+        <form onSubmit={handleScanSubmit} className="flex flex-col gap-4">
+          <label className="flex flex-col items-center justify-center gap-3 w-full h-48 rounded-xl border-2 border-dashed border-gray-300 hover:border-emerald-400 transition-colors cursor-pointer bg-gray-50 hover:bg-emerald-50 relative overflow-hidden">
+            {scanPreview ? (
+              <img
+                src={scanPreview}
+                alt="Selected cookbook page"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <>
+                <span className="text-4xl">📖</span>
+                <span className="text-sm text-gray-500 text-center px-4">
+                  Tap to take a photo or choose an image of a cookbook page
+                </span>
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              onChange={handleScanFileChange}
+              disabled={scanning}
+            />
+          </label>
+          {scanPreview && (
+            <button
+              type="button"
+              onClick={() => { setScanFile(null); setScanPreview(null); setScanError(""); }}
+              className="text-xs text-gray-400 hover:text-gray-600 self-start -mt-2"
+            >
+              Remove image
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={scanning || !scanFile}
+            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {scanning ? "Reading recipe…" : "Extract recipe →"}
+          </button>
+          {scanError && (
+            <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+              {scanError}
+            </div>
+          )}
+          <div className="mt-4 grid grid-cols-3 gap-4 text-center text-sm text-gray-500">
+            {[
+              ["📸", "Photo or gallery"],
+              ["🤖", "AI reads the page"],
+              ["💾", "Save to your recipes"],
+            ].map(([icon, label]) => (
+              <div key={label} className="flex flex-col items-center gap-1">
+                <span className="text-2xl">{icon}</span>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+        </form>
       )}
 
       {/* Search tab */}
